@@ -8,3 +8,8 @@ digest/
 .env*
 .DS_Store
 config.yaml
+boards.json
+notion-logs/
+*.egg-info/
+build/
+dist/

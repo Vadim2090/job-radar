@@ -1,0 +1,39 @@
+{
+  "_doc": "Default rules of the software-engineer gate. Regexes are case-insensitive. A phrase counts only in a requirement context (see job_radar/gates/swe.py). alternative_markers: a clause that offers the software background as one option among others ('or similar technical role') does not score. Point gates.software_engineer.rules_file at a copy of this file to change the rules.",
+  "threshold": 3,
+  "title_weight": 3,
+  "title_phrases": [
+    "software (?:engineer|developer)",
+    "back[- ]?end (?:engineer|developer)",
+    "full[- ]?stack (?:engineer|developer)",
+    "server[- ]side (?:engineer|developer)",
+    "\\bsde\\b"
+  ],
+  "phrases": [
+    {
+      "weight": 2,
+      "name": "software engineer background",
+      "regex": "(?:experience|background) (?:as|of|in|working as) an? (?:\\w+[- ]){0,2}(?:software|backend|back-end) (?:engineer|developer)|\\d+\\+? years[^.]{0,40}software (?:engineer|development)|software engineer(?:ing)? (?:experience|background)"
+    },
+    {
+      "weight": 2,
+      "name": "Node.js / TypeScript proficiency",
+      "regex": "(?:strong|solid|proven|advanced|deep|extensive|excellent)[^.]{0,30}(?:proficien\\w+|experience|knowledge|command|expertise)[^.]{0,20}(?:node\\.?js|typescript)|(?:proficien\\w+|expertise|experience)[^.]{0,20}(?:in|with) (?:node\\.?js|typescript)"
+    },
+    {
+      "weight": 1,
+      "name": "backend / server-side",
+      "regex": "back[- ]?end|server[- ]side"
+    },
+    {
+      "weight": 1,
+      "name": "software engineer",
+      "regex": "software (?:engineer|developer)"
+    }
+  ],
+  "requirement_headers": "what you bring|requirements?|qualifications?|who you are|you have|about you|must[- ]have|what we(?:'|’)re looking for|skills|your profile|what you(?:'|’)ll need|minimum",
+  "other_headers": "responsibilit\\w+|what you(?:'|’)ll (?:be )?doing|what you will do|the role|about (?:us|the company|the role)|nice[- ]to[- ]have|bonus|preferred|benefits|perks|life at|data foundation|systems and|activation|cross-functional|our stack",
+  "strong_markers": "experience (?:as|in|with)|proficien\\w+|expertise|must|required|requires|\\d+\\+? years|strong|solid|proven|background",
+  "nice_markers": "\\ba plus\\b|nice[- ]to[- ]have|\\bbonus\\b|\\bpreferred\\b|\\bdesirable\\b|\\bbeneficial\\b|\\bnot required\\b|\\bis an? (?:advantage|asset)\\b|\\bwould be (?:a )?(?:plus|great|nice)\\b|familiar(?:ity)? with",
+  "alternative_markers": "\\bor (?:a |an )?(?:similar|equivalent|related|comparable)\\b|\\bor (?:a |an )?(?:marketing|sales|solutions?|customer|data|analytics|systems|technical)[- /]|, or (?:a |an )?(?:software|marketing|sales)"
+}

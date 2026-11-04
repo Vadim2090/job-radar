@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "job-radar"
+version = "0.1.0"
+description = "Self-hosted job radar: fresh postings from public ATS job boards, deterministic gates, relevance scoring, a daily digest."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = ["PyYAML>=6"]
+keywords = ["jobs", "ats", "greenhouse", "lever", "ashby", "workable", "job-search"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+]
+
+[project.scripts]
+job-radar = "job_radar.cli:main"
+
+[tool.setuptools]
+packages = ["job_radar", "job_radar.gates"]
+
+[tool.setuptools.package-data]
+job_radar = ["data/*.json"]
