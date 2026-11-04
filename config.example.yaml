@@ -1,0 +1,111 @@
+# job-radar example config.
+# Fictional profile: a Head of Growth looking in Europe, relocation welcome, B2B SaaS.
+# Copy to config.yaml and edit. Relative paths resolve against this file's folder.
+
+database: jobs.db            # SQLite store
+digest_dir: digest           # digest/YYYY-MM-DD.json and .md
+boards_cache: boards.json    # company -> resolved board, so the next run only fetches
+timezone: Europe/Berlin      # a date-only "posted" counts from 00:00 here; also the digest file date
+
+# Companies whose public boards are fetched. A plain name is resolved by probing slug candidates
+# ("Acme Labs" -> acme-labs, acmelabs) against every provider in sources.ats.providers.
+# Give provider + slug to skip probing.
+companies:
+  - GitLab
+  - Linear
+  - n8n
+  - {name: Spotify, provider: lever, slug: spotify}
+
+sources:
+  ats:
+    enabled: true
+    providers: [ashby, greenhouse, lever, recruitee, pinpoint]
+    workers: 6               # parallel board fetches
+    min_interval: 0.12       # seconds between any two requests, all workers together
+  workable:                  # Workable's public cross-company search (no company list needed)
+    enabled: true
+    queries: ["Head of Growth"]
+    locations: [Germany, Netherlands]
+    remote_locations: [Europe]   # searched with workplace=remote
+    pages: 1                 # 20 postings per page, newest first
+  freehire:                  # freehire.me aggregator, optional
+    enabled: false
+    keywords: ["Head of Growth"]
+    days: 2
+
+gates:
+  # A posting is collected only when its title matches one of these (case-insensitive regexes).
+  title_match:
+    - growth
+    - \bgtm\b
+    - go[- ]to[- ]market
+    - demand gen
+    - revops|revenue operations
+    - marketing
+
+  # Built-in role families to exclude (see README). Remove a name to keep that family; [] keeps all.
+  role_families: [president, salesforce, recruiter, junior, ops, anonymous, engineer, sales, gm, d2c, retail, mobile_app]
+  # Extra families of your own, matched against the title.
+  custom_families:
+    - {name: brand, title_regex: "\\bbrand (?:manager|designer)\\b"}
+
+  # Exclude postings that state an existing right to work in a country, or no visa sponsorship.
+  work_authorization: true
+
+  languages:
+    enabled: true
+    spoken: [English]        # a required language outside this list excludes the posting
+
+  software_engineer:
+    enabled: true            # exclude postings that require a software-engineer background
+    threshold: 3             # score needed; default rules in job_radar/data/swe_gate.json
+    # rules_file: my_swe_rules.json
+
+  regions:
+    # Areas: europe, americas, australia, oceania, asia_africa
+    blocked: [asia_africa, australia]       # excluded when EVERY listed place is in these areas
+    relocation_required: [americas]         # excluded unless the posting offers relocation or visa support
+    extra_hints:                            # extra place names per area, added to the built-in lists
+      europe: [Ljubljana, Zagreb]
+
+  work_mode:
+    allowed: [remote, hybrid, office, unknown]
+
+  freshness_hours: 24        # digest and Notion create only postings published within this window
+
+# Tags that rank, never filter. Matched against location + description.
+signals:
+  - {name: Relocation, pattern: "relocation (?:support|package|assistance)"}
+  - {name: Visa, pattern: "visa sponsorship"}
+
+# Relevance: regex -> weight, each pattern counts once. High >= thresholds.high, Medium >= thresholds.medium.
+profile:
+  title:
+    "head of growth|vp,? growth|director of growth|growth lead|lead growth": 6
+    "head of (?:demand|acquisition|performance)|head of marketing|vp,? marketing|cmo": 5
+    "growth": 2
+    "\\bgtm\\b|go[- ]to[- ]market|revops|revenue operations": 2
+    "\\b(?:senior|sr|principal)\\b": 1
+    "\\b(?:content|brand|social media|events?)\\b": -4
+  description:
+    "experiment|a/b test": 1
+    "funnel|activation|retention": 1
+    "\\bb2b\\b|\\bsaas\\b": 1
+    "plg|product[- ]led": 1
+    "attribution|marketing analytics": 1
+    "relocation (?:support|package|assistance)|visa sponsorship": 2
+  thresholds: {high: 8, medium: 4}
+
+digest:
+  levels: [High, Medium]
+  limit: 30
+  description_chars: 2000
+
+notion:
+  enabled: false
+  token_env: NOTION_TOKEN            # the integration token is read from this environment variable
+  database_id_env: NOTION_DATABASE_ID
+  database_id: null                  # or put the database id here
+  create_levels: [High, Medium]
+  keep_statuses: [shortlist, applied]   # archive never touches pages with these statuses
+  log_dir: notion-logs               # rollback logs of archive runs
