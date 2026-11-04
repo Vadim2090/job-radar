@@ -259,10 +259,21 @@ def plan(rows, have, cfg, now=None):
         canonical = have.get(merged[j])
         canon_st = select_name(canonical, "Status") if canonical else None
         # a worked-on Status moves to the canonical page only when that page has none yet (or "new"):
-        # a Status the person already set on the canonical page is never overwritten or downgraded
+        # a Status the person already set on the canonical page is never overwritten or downgraded.
+        # Several duplicates with different statuses: the most advanced one wins (STATUS_RANK).
         if st and st != "new" and (not canon_st or canon_st == "new"):
-            carried[merged[j]] = st
+            prev = carried.get(merged[j])
+            if prev is None or status_rank(st) > status_rank(prev):
+                carried[merged[j]] = st
     return create, update, stale, carried
+
+
+# How far a posting has moved through the person's workflow; a status not listed here counts as just above "new".
+STATUS_RANK = {"new": 0, "skip": 1, "shortlist": 2, "applied": 3}
+
+
+def status_rank(status):
+    return STATUS_RANK.get(status, 1)
 
 
 def manual_relevance(page):

@@ -185,3 +185,15 @@ class CarryStatus(unittest.TestCase):
         notion.sync(con, c, api, "db", now=NOW, out=io.StringIO())
         (path, body), = api.writes("PATCH", "/pages/p-dupb")
         self.assertEqual(body["properties"]["Status"], {"select": {"name": "applied"}})
+
+    def test_several_duplicates_most_advanced_status_wins(self):
+        for first, second in (("applied", "shortlist"), ("shortlist", "applied")):
+            c, con = db()
+            add_job(con, "dup-c", "Growth Lead (Italy)", company="Dup", description=LONG,
+                    posted="2026-11-03T08:00:00+00:00")
+            classify.classify_all(con, c)
+            api = FakeNotion([page("p-dupa", "dup-a", status=first), page("p-dupc", "dup-c", status=second)])
+            notion.sync(con, c, api, "db", now=NOW, out=io.StringIO())
+            created = {b["properties"]["Job ID"]["rich_text"][0]["text"]["content"]: b
+                       for _, b in api.writes("POST", "/pages")}
+            self.assertEqual(created["dup-b"]["properties"]["Status"], {"select": {"name": "applied"}}, (first, second))

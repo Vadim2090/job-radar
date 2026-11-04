@@ -98,7 +98,7 @@ Rules worth knowing:
   evidence. Several modes named as options means `unknown`. The ATS workplace field is the fallback.
 - **Freshness.** A timestamp counts as is; a date without a time counts from 00:00 in `timezone`. A missing
   date is not fresh. Up to one hour in the future is clock skew; more is treated as bogus.
-- **Signals** (`signals`) are tags matched in location + description. They rank, never filter.
+- **Signals** (`signals`) are tags matched in location + description. They are stored and shown in the digest; they never filter or change the order.
   `Multi-location` is added for postings that list several places.
 
 ## Relevance
