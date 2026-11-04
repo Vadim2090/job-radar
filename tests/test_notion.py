@@ -164,3 +164,24 @@ class Client(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CarryStatus(unittest.TestCase):
+    def test_merged_status_never_downgrades_canonical(self):
+        c, con = db()
+        canonical = page("p-dupb", "dup-b", status="applied")
+        merged_page = page("p-dupa", "dup-a", status="shortlist")
+        api = FakeNotion([canonical, merged_page])
+        notion.sync(con, c, api, "db", now=NOW, out=io.StringIO())
+        for path, body in api.writes("PATCH", "/pages/p-dupb"):
+            self.assertNotIn("Status", body.get("properties", {}))   # 'applied' stays
+        self.assertTrue(api.pages["p-dupa"]["archived"])
+
+    def test_merged_status_fills_canonical_new(self):
+        c, con = db()
+        canonical = page("p-dupb", "dup-b", status="new")
+        merged_page = page("p-dupa", "dup-a", status="applied")
+        api = FakeNotion([canonical, merged_page])
+        notion.sync(con, c, api, "db", now=NOW, out=io.StringIO())
+        (path, body), = api.writes("PATCH", "/pages/p-dupb")
+        self.assertEqual(body["properties"]["Status"], {"select": {"name": "applied"}})

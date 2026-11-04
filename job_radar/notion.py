@@ -256,7 +256,11 @@ def plan(rows, have, cfg, now=None):
     carried = {}
     for j, p in stale.items():
         st = select_name(p, "Status")
-        if st and st != "new":
+        canonical = have.get(merged[j])
+        canon_st = select_name(canonical, "Status") if canonical else None
+        # a worked-on Status moves to the canonical page only when that page has none yet (or "new"):
+        # a Status the person already set on the canonical page is never overwritten or downgraded
+        if st and st != "new" and (not canon_st or canon_st == "new"):
             carried[merged[j]] = st
     return create, update, stale, carried
 
