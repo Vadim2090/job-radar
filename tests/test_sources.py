@@ -58,6 +58,18 @@ class Boards(unittest.TestCase):
         self.assertEqual(sources.slug_candidates("Example Labs"), ["example-labs", "examplelabs"])
         self.assertEqual(sources.slug_candidates("Sample.io"), ["sample-io", "sampleio", "sample"])
 
+    def test_cached_hit_on_disabled_provider_is_skipped(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            c = cfg(tmp, companies=["Example Labs"])
+            c["sources"]["ats"]["providers"] = ["ashby"]
+            with open(c["boards_cache"], "w") as f:
+                json.dump({"Example Labs": {"provider": "lever", "slug": "example-labs"}}, f)
+            calls = []
+            boards = sources.resolve_boards(c, fetch=lambda url, ua, tries=4: calls.append(url) or (404, ""),
+                                            throttle=NoWait())
+            self.assertEqual((boards, calls), ({}, []))
+
     def test_board_shapes(self):
         self.assertTrue(sources.valid_board("ashby", json.dumps({"jobs": []})))
         self.assertTrue(sources.valid_board("recruitee", json.dumps({"offers": []})))
@@ -202,6 +214,19 @@ class Freehire(unittest.TestCase):
         rows = [mk("one", 15), mk("two", 16)]
         self.assertEqual(dedupe.dedupe_freehire(rows, con), 1)
         self.assertEqual((rows[1]["dup_of"], rows[1]["dedupe_by"]), ("fh:one", "title"))
+
+    def test_stored_aggregator_row_catches_repost(self):
+        con = sqlite3.connect(":memory:")
+        con.execute("CREATE TABLE jobs(job_id,company,title,location,url,apply_url,posted_date)")
+        con.execute("INSERT INTO jobs VALUES ('fh:old','Acme','Product Manager','Berlin, Germany',"
+                    "'https://old.test/old',NULL,'2026-10-15')")
+        mk = lambda n: {"job_id": f"fh:{n}", "company": "Acme", "title": "Product Manager", "fh_countries": ["de"],
+                        "location": "Berlin, Germany", "url": f"https://{n}.test/{n}", "apply_url": None,
+                        "posted": sources.parse_date("2026-10-16"), "fh_source": "other", "fh_external_id": n}
+        rows = [mk("new"), mk("old")]
+        self.assertEqual(dedupe.dedupe_freehire(rows, con), 1)
+        self.assertEqual((rows[0]["dup_of"], rows[0]["dedupe_by"]), ("fh:old", "title"))
+        self.assertNotIn("dup_of", rows[1])   # the stored row itself is refreshed, not a duplicate of itself
 
     def test_429_sleeps_retry_after(self):
         err = urllib.error.HTTPError("u", 429, "x", {"Retry-After": "7"}, None)

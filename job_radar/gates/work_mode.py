@@ -52,7 +52,8 @@ OPTION_LIST = re.compile(r"\b(?:remote|hybrid|on-?site|office[- ]based)\b[^.\n]{
 
 OFFICE_DAYS = re.compile(r"\boffice[- ]based\s+(?:\d|one|two|three|four)\s*days?\s*(?:a|per|each)\s*week", re.I)
 
-FIELD = {"remote": "remote", "hybrid": "hybrid", "on-site": "office", "onsite": "office", "office": "office"}
+FIELD = {"remote": "remote", "hybrid": "hybrid", "on-site": "office", "on_site": "office", "on site": "office",
+         "onsite": "office", "office": "office"}
 
 
 def _clean(text):

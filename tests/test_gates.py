@@ -86,6 +86,7 @@ class WorkMode(unittest.TestCase):
     def test_workplace_field_is_the_fallback(self):
         self.assertEqual(self.mode("Nothing here.", "Madrid", "Hybrid"), "hybrid")
         self.assertEqual(self.mode("Nothing here.", "Madrid", "on-site"), "office")
+        self.assertEqual(self.mode("Nothing here.", "Madrid", "on_site"), "office")   # Recruitee, Pinpoint
         self.assertEqual(self.mode("Fully remote team.", "Madrid", "Hybrid"), "remote")
         self.assertEqual(self.mode(None, None, None), "unknown")
 

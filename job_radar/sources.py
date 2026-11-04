@@ -169,7 +169,8 @@ def resolve_boards(cfg, refresh=False, save=True, fetch=request_json, throttle=N
             continue
         entry = cache.get(name)
         if entry and entry.get("provider"):
-            boards[name] = entry
+            if entry["provider"] in providers:   # a hit on a provider since disabled is neither fetched nor re-probed
+                boards[name] = entry
             continue
         untried = [p for p in providers if p not in (entry or {}).get("tried", [])]
         if untried:

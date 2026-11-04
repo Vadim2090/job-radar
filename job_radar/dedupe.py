@@ -101,11 +101,12 @@ class DedupeIndex:
             self.titles.setdefault((norm_company(company), norm_text(title)), []).append((job_id, location, _day(posted)))
 
     def match(self, row):
+        # a stored copy of this same row is not a duplicate of it
         triple = ats_triple(None, row.get("url"), row.get("fh_source"), row.get("fh_external_id"))
-        if triple and triple in self.triples:
+        if triple and self.triples.get(triple, row["job_id"]) != row["job_id"]:
             return self.triples[triple], "ats"
         cu = canonical_url(row.get("url"))
-        if cu and cu in self.urls:
+        if cu and self.urls.get(cu, row["job_id"]) != row["job_id"]:
             return self.urls[cu], "url"
         mine = _day(row.get("posted"))
         for job_id, location, day in self.titles.get((norm_company(row.get("company")), norm_text(row.get("title"))), []):
@@ -123,14 +124,19 @@ def dedupe_freehire(rows, con, batch=()):
     """Mark every freehire row that is already stored or in this run's other rows with dup_of=<job_id> and
     dedupe_by=<ats|url|title>. The duplicate becomes a sighting on the existing posting, never a second row."""
     index = DedupeIndex()
-    for jid, company, title, location, url, apply_url, posted in con.execute(
-            "SELECT job_id, company, title, location, url, apply_url, posted_date FROM jobs "
-            "WHERE job_id NOT LIKE 'fh:%'"):
-        index.add(jid, company, title, location, url, apply_url, posted)
+    stored = con.execute("SELECT job_id, company, title, location, url, apply_url, posted_date FROM jobs").fetchall()
+    # board postings first, so an aggregator repost resolves to the board copy; stored aggregator rows after
+    # them, so a repost under a new slug resolves to the aggregator row already stored
+    for jid, company, title, location, url, apply_url, posted in stored:
+        if not jid.startswith("fh:"):
+            index.add(jid, company, title, location, url, apply_url, posted)
     for row in batch:
         if row.get("job_id") and not row["job_id"].startswith("fh:"):
             index.add(row["job_id"], row.get("company"), row.get("title"), row.get("location"),
                       row.get("url"), row.get("apply_url"), row.get("posted"))
+    for jid, company, title, location, url, apply_url, posted in stored:
+        if jid.startswith("fh:"):
+            index.add(jid, company, title, location, url, apply_url, posted)
     counts = Counter()
     for row in rows:
         if not row["job_id"].startswith("fh:"):
